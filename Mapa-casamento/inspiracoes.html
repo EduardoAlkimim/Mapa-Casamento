@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspirações · Eduardo & Thamires</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0e0d0b;
+  --surface: #171510;
+  --surface2: #1f1c16;
+  --border: #2a2620;
+  --gold: #c9a96e;
+  --gold-dim: #6b5535;
+  --text: #e8e0d0;
+  --text-dim: #6a6358;
+  --panel-w: 440px;
+  --header-h: 54px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 300;
+  letter-spacing: .14em;
+  color: var(--gold);
+}
+.logo em { font-style: italic; color: var(--text-dim); font-size: 15px; }
+.hint { font-size: 11px; color: var(--text-dim); letter-spacing: .05em; }
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #555; display: inline-block; margin-right: 6px;
+  transition: background .3s;
+}
+.status-dot.online { background: #5a9; }
+
+.workspace {
+  flex: 1; display: flex;
+  overflow: hidden; position: relative;
+}
+
+/* MAPA */
+.map-side {
+  flex: 1; display: flex;
+  align-items: center; justify-content: center;
+  padding: 20px; overflow: hidden;
+  transition: padding-right .3s ease;
+}
+.map-side.shifted { padding-right: calc(var(--panel-w) + 20px); }
+
+.map-wrap {
+  position: relative; display: inline-block;
+  line-height: 0; max-width: 100%;
+  max-height: calc(100vh - var(--header-h) - 40px);
+}
+.map-wrap img {
+  display: block; max-width: 100%;
+  max-height: calc(100vh - var(--header-h) - 40px);
+  width: auto; height: auto;
+  border-radius: 3px; user-select: none; pointer-events: none;
+}
+
+.zones-svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+
+.zone {
+  fill: transparent; stroke: transparent;
+  cursor: pointer; transition: fill .18s, stroke .18s;
+}
+.zone:hover, .zone.active {
+  stroke: var(--gold); stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+  fill: rgba(201,169,110,.15);
+}
+.zone.active {
+  stroke-dasharray: none;
+  fill: rgba(201,169,110,.22);
+}
+
+.zlabel {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px; font-weight: 500;
+  fill: var(--gold); letter-spacing: .07em;
+  text-transform: uppercase; pointer-events: none;
+  opacity: 0; transition: opacity .18s;
+  paint-order: stroke fill;
+  stroke: #0e0d0b; stroke-width: 3px; stroke-linejoin: round;
+}
+.zlabel.visible { opacity: 1; }
+
+.map-wrap:hover .zone {
+  stroke: var(--gold); stroke-width: 1;
+  stroke-dasharray: 5 3;
+  fill: rgba(201,169,110,.06);
+}
+.map-wrap:hover .zone:hover,
+.map-wrap:hover .zone.active {
+  fill: rgba(201,169,110,.2);
+  stroke-width: 1.5; stroke-dasharray: none;
+}
+.map-wrap:hover .zlabel { opacity: .7; }
+.map-wrap:hover .zlabel.visible { opacity: 1; }
+
+/* PAINEL */
+.panel {
+  position: absolute; top: 0; right: 0;
+  width: var(--panel-w); height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .3s ease;
+  z-index: 20;
+}
+.panel.open { transform: translateX(0); }
+
+.panel-top {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0; display: flex;
+  align-items: flex-start;
+  justify-content: space-between; gap: 12px;
+}
+.panel-zone-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px; font-weight: 300;
+  color: var(--gold); line-height: 1.15;
+}
+.panel-meta { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+.btn-close {
+  background: none; border: none;
+  color: var(--text-dim); cursor: pointer;
+  font-size: 16px; padding: 2px 4px; line-height: 1;
+  transition: color .15s; flex-shrink: 0;
+}
+.btn-close:hover { color: var(--text); }
+
+.upload-area {
+  margin: 14px 20px;
+  border: 1.5px dashed var(--border);
+  border-radius: 6px; padding: 16px;
+  text-align: center; cursor: pointer;
+  transition: border-color .2s, background .2s;
+  flex-shrink: 0; position: relative;
+}
+.upload-area:hover, .upload-area.drag-over {
+  border-color: var(--gold-dim);
+  background: rgba(201,169,110,.04);
+}
+.upload-area input[type=file] {
+  position: absolute; inset: 0; opacity: 0;
+  cursor: pointer; width: 100%; height: 100%;
+}
+.upload-icon { font-size: 22px; margin-bottom: 6px; display: block; }
+.upload-label { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.upload-label strong { color: var(--gold); font-weight: 500; }
+
+.progress-wrap { margin: 0 20px 10px; display: none; flex-shrink: 0; }
+.progress-wrap.show { display: block; }
+.progress-bar-bg { background: var(--border); border-radius: 2px; height: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--gold); width: 0%; transition: width .2s; border-radius: 2px; }
+.progress-text { font-size: 10px; color: var(--text-dim); margin-top: 4px; letter-spacing: .04em; }
+
+.gallery {
+  flex: 1; overflow-y: auto;
+  padding: 4px 20px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.gallery::-webkit-scrollbar { width: 3px; }
+.gallery::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 140px; gap: 10px;
+  color: var(--text-dim); font-size: 12px;
+  text-align: center; line-height: 1.6;
+}
+.empty-icon { font-size: 30px; opacity: .35; }
+
+.loading-gallery {
+  display: flex; align-items: center; justify-content: center;
+  height: 80px; color: var(--text-dim); font-size: 12px; gap: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.card {
+  border-radius: 5px; overflow: hidden;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  position: relative; transition: border-color .15s;
+}
+.card:hover { border-color: var(--gold-dim); }
+
+.card-media {
+  width: 100%; aspect-ratio: 4/3;
+  object-fit: cover; display: block;
+  background: var(--bg); cursor: zoom-in;
+}
+.card-video-thumb {
+  width: 100%; aspect-ratio: 4/3;
+  display: flex; align-items: center; justify-content: center;
+  background: #111; position: relative;
+  cursor: pointer; overflow: hidden;
+}
+.card-video-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.play-btn {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.35);
+}
+.play-btn svg { width: 32px; height: 32px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+
+.card-actions {
+  position: absolute; top: 5px; right: 5px;
+  display: flex; gap: 4px;
+  opacity: 0; transition: opacity .15s;
+}
+.card:hover .card-actions { opacity: 1; }
+
+.btn-action {
+  background: rgba(14,13,11,.8);
+  border: 1px solid rgba(255,255,255,.12);
+  color: var(--text); border-radius: 3px;
+  padding: 3px 6px; font-size: 11px;
+  cursor: pointer; line-height: 1; transition: background .15s;
+}
+.btn-action.del:hover { background: #c0392b; border-color: #c0392b; }
+
+.lightbox {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.94); z-index: 200;
+  display: none; align-items: center; justify-content: center;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: 92vw; max-height: 90vh; object-fit: contain; border-radius: 3px; }
+.lb-close {
+  position: absolute; top: 18px; right: 22px;
+  background: none; border: none;
+  color: rgba(255,255,255,.6); font-size: 26px;
+  cursor: pointer; line-height: 1; transition: color .15s;
+}
+.lb-close:hover { color: #fff; }
+
+.video-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.96); z-index: 200;
+  display: none; align-items: center; justify-content: center;
+}
+.video-modal.open { display: flex; }
+.video-modal video { max-width: 90vw; max-height: 82vh; border-radius: 4px; background: #000; }
+.vm-close {
+  position: absolute; top: 18px; right: 22px;
+  background: none; border: none;
+  color: rgba(255,255,255,.6); font-size: 26px; cursor: pointer;
+}
+.vm-close:hover { color: #fff; }
+
+.toast {
+  position: fixed; bottom: 22px; left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 9px 18px; border-radius: 5px;
+  font-size: 12px; z-index: 300; transition: transform .25s ease;
+  pointer-events: none; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.ok  { border-color: var(--gold-dim); color: var(--gold); }
+.toast.err { border-color: #922; color: #e55; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Eduardo <em>&</em> Thamires &nbsp;·&nbsp; <em>Mapa de Inspirações</em></div>
+  <div class="hint">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Conectando…</span>
+  </div>
+</header>
+
+<div class="workspace">
+  <div class="map-side" id="mapSide">
+    <div class="map-wrap">
+      <img src="planta.jpg" alt="Planta do local" />
+      <svg class="zones-svg" viewBox="0 0 1478 1064" preserveAspectRatio="xMidYMid meet">
+
+        <rect class="zone" data-zone="cerimonia"
+          x="97" y="37" width="329" height="211" rx="8"/>
+        <text class="zlabel" id="lbl-cerimonia" x="262" y="143" text-anchor="middle">Cerimônia</text>
+
+        <rect class="zone" data-zone="ilhas"
+          x="461" y="276" width="98" height="414" rx="8"/>
+        <text class="zlabel" id="lbl-ilhas" x="510" y="483" text-anchor="middle">Ilhas Gastronômicas</text>
+
+        <rect class="zone" data-zone="mesas"
+          x="574" y="404" width="159" height="403" rx="8"/>
+        <text class="zlabel" id="lbl-mesas" x="654" y="606" text-anchor="middle">Mesas dos Convidados</text>
+
+        <rect class="zone" data-zone="casavidro"
+          x="889" y="478" width="328" height="240" rx="8"/>
+        <text class="zlabel" id="lbl-casavidro" x="1053" y="598" text-anchor="middle">Casa de Vidro · Pista de Dança</text>
+
+        <rect class="zone" data-zone="lounge"
+          x="847" y="777" width="146" height="169" rx="8"/>
+        <text class="zlabel" id="lbl-lounge" x="920" y="862" text-anchor="middle">Área de Lounge</text>
+
+        <rect class="zone" data-zone="fogueira"
+          x="74" y="753" width="280" height="224" rx="8"/>
+        <text class="zlabel" id="lbl-fogueira" x="214" y="865" text-anchor="middle">Fogueira · Lounge</text>
+
+        <rect class="zone" data-zone="carrinhos"
+          x="1029" y="782" width="243" height="202" rx="8"/>
+        <text class="zlabel" id="lbl-carrinhos" x="1151" y="883" text-anchor="middle">Carrinhos &amp; Cabine de Fotos</text>
+
+      </svg>
+    </div>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="panel-top">
+      <div>
+        <div class="panel-zone-name" id="panelName">—</div>
+        <div class="panel-meta" id="panelMeta"></div>
+      </div>
+      <button class="btn-close" id="btnClose">✕</button>
+    </div>
+
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="fileInput" accept="image/*,video/*" multiple />
+      <span class="upload-icon">📎</span>
+      <div class="upload-label">
+        <strong>Clique para adicionar</strong> ou arraste aqui<br>
+        Fotos e vídeos · vários de uma vez
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText">Enviando…</div>
+    </div>
+
+    <div class="gallery" id="gallery"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" id="lbClose">✕</button>
+  <img id="lbImg" src="" alt="" />
+</div>
+
+<div class="video-modal" id="videoModal">
+  <button class="vm-close" id="vmClose">✕</button>
+  <video id="vmVideo" controls playsinline></video>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp }         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── CONFIG ────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyDZXndsT19MANJphzH3M-X6qQJiHW6SiVo",
+  authDomain:        "mapa-casamento-8e840.firebaseapp.com",
+  projectId:         "mapa-casamento-8e840",
+  storageBucket:     "mapa-casamento-8e840.firebasestorage.app",
+  messagingSenderId: "753576206711",
+  appId:             "1:753576206711:web:48227136aa8c4ea6d24172",
+};
+
+const CLOUD_NAME    = 'dsry3r1jc';
+const UPLOAD_PRESET = 'Casamento';
+
+const ZONES = {
+  cerimonia: 'Cerimônia',
+  ilhas:     'Ilhas Gastronômicas',
+  mesas:     'Mesas dos Convidados',
+  casavidro: 'Casa de Vidro · Pista de Dança',
+  lounge:    'Área de Lounge',
+  fogueira:  'Fogueira · Lounge',
+  carrinhos: 'Carrinhos & Cabine de Fotos',
+};
+
+// ── FIREBASE INIT ─────────────────────────────────────────────
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const REF = () => doc(db, 'inspiracoes', 'mapa');
+
+let cache = {};   // espelho local para não bater no Firestore a cada render
+let currentZone = null;
+
+async function loadFromFirestore() {
+  try {
+    const snap = await getDoc(REF());
+    cache = snap.exists() ? (snap.data() || {}) : {};
+    setStatus(true);
+  } catch(e) {
+    console.error('Firestore load:', e);
+    setStatus(false);
+    toast('Erro ao carregar dados', 'err');
+  }
+}
+
+async function saveZone(zoneId) {
+  try {
+    await setDoc(REF(), { [zoneId]: cache[zoneId] || [] }, { merge: true });
+  } catch(e) {
+    console.error('Firestore save:', e);
+    toast('Erro ao salvar', 'err');
+  }
+}
+
+function setStatus(online) {
+  document.getElementById('statusDot').className  = 'status-dot' + (online ? ' online' : '');
+  document.getElementById('statusText').textContent = online ? 'Sincronizado' : 'Offline';
+}
+
+// ── ZONAS ─────────────────────────────────────────────────────
+document.querySelectorAll('.zone').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    document.getElementById('lbl-' + el.dataset.zone)?.classList.add('visible');
+  });
+  el.addEventListener('mouseleave', () => {
+    if (!el.classList.contains('active'))
+      document.getElementById('lbl-' + el.dataset.zone)?.classList.remove('visible');
+  });
+  el.addEventListener('click', () => openZone(el.dataset.zone));
+});
+
+function openZone(id) {
+  document.querySelectorAll('.zone').forEach(z => {
+    z.classList.remove('active');
+    document.getElementById('lbl-' + z.dataset.zone)?.classList.remove('visible');
+  });
+  document.querySelector(`[data-zone="${id}"]`)?.classList.add('active');
+  document.getElementById('lbl-' + id)?.classList.add('visible');
+
+  currentZone = id;
+  document.getElementById('panelName').textContent = ZONES[id] || id;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('mapSide').classList.add('shifted');
+  renderGallery();
+}
+
+document.getElementById('btnClose').addEventListener('click', () => {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('mapSide').classList.remove('shifted');
+  document.querySelectorAll('.zone').forEach(z => {
+    z.classList.remove('active');
+    document.getElementById('lbl-' + z.dataset.zone)?.classList.remove('visible');
+  });
+  currentZone = null;
+});
+
+// ── UPLOAD ────────────────────────────────────────────────────
+const fileInput  = document.getElementById('fileInput');
+const uploadArea = document.getElementById('uploadArea');
+
+uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) handleFiles(fileInput.files);
+  fileInput.value = '';
+});
+
+async function handleFiles(files) {
+  if (!currentZone) return;
+  const arr = Array.from(files);
+  if (!arr.length) return;
+
+  const pw = document.getElementById('progressWrap');
+  const pf = document.getElementById('progressFill');
+  const pt = document.getElementById('progressText');
+  pw.classList.add('show');
+
+  let done = 0;
+  for (const file of arr) {
+    pt.textContent = `Enviando ${done + 1} de ${arr.length}…`;
+    pf.style.width = (done / arr.length * 100) + '%';
+    try {
+      const result = await uploadToCloudinary(file);
+      if (!cache[currentZone]) cache[currentZone] = [];
+      cache[currentZone].unshift({
+        id:        Date.now() + '_' + Math.random().toString(36).slice(2),
+        url:       result.secure_url,
+        type:      file.type.startsWith('video/') ? 'video' : 'image',
+        public_id: result.public_id,
+        ts:        new Date().toISOString(),
+      });
+      await saveZone(currentZone);
+      renderGallery();
+    } catch(e) {
+      toast('Erro ao enviar ' + file.name, 'err');
+      console.error(e);
+    }
+    done++;
+  }
+
+  pf.style.width = '100%';
+  pt.textContent = `${done} arquivo${done > 1 ? 's' : ''} enviado${done > 1 ? 's' : ''}`;
+  setTimeout(() => pw.classList.remove('show'), 1800);
+  toast(done + ' referência' + (done > 1 ? 's' : '') + ' adicionada' + (done > 1 ? 's' : '') + ' ✓', 'ok');
+}
+
+async function uploadToCloudinary(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', UPLOAD_PRESET);
+  fd.append('folder', 'casamento/' + currentZone);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+    method: 'POST', body: fd,
+  });
+  if (!res.ok) throw new Error('Cloudinary error: ' + res.status);
+  return res.json();
+}
+
+// ── GALERIA ───────────────────────────────────────────────────
+function renderGallery() {
+  const el    = document.getElementById('gallery');
+  const items = cache[currentZone] || [];
+  const count = items.length;
+
+  document.getElementById('panelMeta').textContent =
+    count === 0 ? 'Nenhuma referência ainda'
+    : count === 1 ? '1 referência'
+    : count + ' referências';
+
+  if (!count) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">🌿</div>
+      Nenhuma inspiração ainda.<br>Adicione fotos ou vídeos acima.
+    </div>`;
+    return;
+  }
+  el.innerHTML = `<div class="grid">${items.map(cardHTML).join('')}</div>`;
+}
+
+function cardHTML(item) {
+  const safeUrl = escAttr(item.url);
+  if (item.type === 'video') {
+    const thumb = item.url
+      .replace('/video/upload/', '/video/upload/so_0,w_400/')
+      .replace(/\.[^.]+$/, '.jpg');
+    return `<div class="card">
+      <div class="card-video-thumb" onclick="openVideo('${safeUrl}')">
+        <img src="${escAttr(thumb)}" onerror="this.style.display='none'" />
+        <div class="play-btn">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="22" cy="22" r="21" fill="rgba(0,0,0,.5)" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+            <path d="M18 14l14 8-14 8V14z" fill="white"/>
+          </svg>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn-action del" onclick="removeItem('${item.id}')">✕</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="card">
+    <img class="card-media" src="${safeUrl}" loading="lazy"
+         onerror="this.style.opacity='.2'"
+         onclick="openLightbox('${safeUrl}')" />
+    <div class="card-actions">
+      <button class="btn-action del" onclick="removeItem('${item.id}')">✕</button>
+    </div>
+  </div>`;
+}
+
+// ── REMOVER ───────────────────────────────────────────────────
+window.removeItem = async (id) => {
+  if (!currentZone) return;
+  cache[currentZone] = (cache[currentZone] || []).filter(i => i.id !== id);
+  await saveZone(currentZone);
+  renderGallery();
+  toast('Removido');
+};
+
+// ── LIGHTBOX ──────────────────────────────────────────────────
+window.openLightbox = (src) => {
+  document.getElementById('lbImg').src = src;
+  document.getElementById('lightbox').classList.add('open');
+};
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) closeLightbox();
+});
+document.getElementById('lbClose').addEventListener('click', closeLightbox);
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
+// ── VÍDEO ─────────────────────────────────────────────────────
+window.openVideo = (src) => {
+  const v = document.getElementById('vmVideo');
+  v.src = src;
+  document.getElementById('videoModal').classList.add('open');
+  v.play().catch(() => {});
+};
+document.getElementById('vmClose').addEventListener('click', closeVideo);
+document.getElementById('videoModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('videoModal')) closeVideo();
+});
+function closeVideo() {
+  const v = document.getElementById('vmVideo');
+  v.pause(); v.src = '';
+  document.getElementById('videoModal').classList.remove('open');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+let toastT;
+window.toast = function(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 2600);
+};
+function toast(msg, type) { window.toast(msg, type); }
+
+function escAttr(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeLightbox(); closeVideo(); }
+});
+
+// ── BOOT ──────────────────────────────────────────────────────
+await loadFromFirestore();
+</script>
+</body>
+</html>
